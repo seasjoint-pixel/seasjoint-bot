@@ -776,17 +776,14 @@ app.add_handler(MessageHandler(
 ))
 
 if __name__ == "__main__":
-    import asyncio
+  print("✅ Bot running...")  
 
-async def main():
-    print("✅ Seasjoint Agency Bot Running...") 
+    # FORCE remove webhook on startup to prevent issues
+    app.bot.delete_webhook(drop_pending_updates=True)
 
-    await app.initialize()
-    await app.start()
-
-    await app.run_polling(drop_pending_updates=True)
-
-    # keep bot alive properly
-   
-    asyncio.run(main()) 
+    # start polling
+    app.run_polling(
+        drop_pending_updates=True
+        )
+    
     
