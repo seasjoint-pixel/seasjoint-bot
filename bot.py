@@ -4,12 +4,14 @@ from telegram import (
     Update
 )
 
-from telegram.ext import Application, ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler
-from telegram.ext import filters
-  
-    
-   
-
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    CallbackQueryHandler,
+    MessageHandler,
+    ContextTypes,
+    filters,
+)
 
 from datetime import datetime
 import sqlite3
@@ -775,15 +777,8 @@ app.add_handler(MessageHandler(
     handle_photo
 ))
 
-if __name__ == "__main__":
-  print("✅ Bot running...")  
+print("✅ Seasjoint Agency Bot Running...")
 
-    # FORCE remove webhook on startup to prevent issues
-    app.bot.delete_webhook(drop_pending_updates=True)
-
-    # start polling
-    app.run_polling(
-        drop_pending_updates=True
-        )
+app.run_polling(drop_pending_updates=True)
     
     
