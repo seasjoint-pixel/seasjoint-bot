@@ -1,25 +1,24 @@
-from telegram import (
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    Update
+# =========================================
+# IMPORTS
+# =========================================
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import (
+    ApplicationBuilder,
+    CallbackQueryHandler,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
 )
-
-from telegram.ext import Application, ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler
-from telegram.ext import filters
-  
-    
-   
-
 
 from datetime import datetime
 import sqlite3
 import smtplib
-import re
 import uuid
-
-
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
 # =========================================
 # SETTINGS
 # =========================================
@@ -71,7 +70,7 @@ CREATE TABLE IF NOT EXISTS applications (
 conn.commit()
 
 # =========================================
-# STATES
+# MEMORY STORAGE
 # =========================================
 
 user_data_store = {}
@@ -83,712 +82,187 @@ broadcast_mode = {}
 # =========================================
 
 def send_email(receiver_email, role):
-
     try:
-
         if role in ["CHAT SUPPORT", "STREAMER"]:
-
-            subject = "Seasjoint Agency Registration"
-
-            body = """
-🎉 Thank you for registering with Seasjoint Agency — Chat Support & Streamers.
-
-To complete your registration, please ensure you make payment and join the official group accessible after payment confirmation.
-
-📌 Telegram Group: t.me/Seasjoint
-📞 WhatsApp Support: 08154429518
-
-We look forward to working with you!
-"""
-
+            subject = "Seasjoint Registration"
+            body = "Thank you for registering as Chat Support / Streamer."
         else:
-
-            subject = "Seasjoint Agency 18+ Actor Registration"
-
-            body = """
-🔥 Thank you for registering for the Seasjoint Agency 18+ Actor Program.
-
-Your application has been received successfully.
-
-📞 WhatsApp Support: 08154429518
-
-⚠️ Strictly 18+ only.
-"""
+            subject = "18+ Actor Registration"
+            body = "Thank you for registering as 18+ Actor."
 
         msg = MIMEMultipart()
-
         msg["From"] = EMAIL_ADDRESS
         msg["To"] = receiver_email
         msg["Subject"] = subject
-
         msg.attach(MIMEText(body, "plain"))
 
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
-
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-
         server.send_message(msg)
         server.quit()
 
     except Exception as e:
-        print(e)
+        print("Email error:", e)
 
 # =========================================
-# MAIN MENU
+# KEYBOARD
 # =========================================
 
 def home_keyboard():
-
     return InlineKeyboardMarkup([
-
-        [InlineKeyboardButton(
-            "💬 Chat Support",
-            callback_data="chat"
-        )],
-
-        [InlineKeyboardButton(
-            "🎬 Streamers",
-            callback_data="streamers"
-        )],
-
-        [InlineKeyboardButton(
-            "🔥 18+ Actors",
-            callback_data="actors"
-        )],
-
-        [InlineKeyboardButton(
-            "💼 My Applications",
-            callback_data="applications"
-        )],
-
-        [InlineKeyboardButton(
-            "⬅️ Start",
-            callback_data="home"
-        )]
+        [InlineKeyboardButton("💬 Chat Support", callback_data="chat")],
+        [InlineKeyboardButton("🎬 Streamers", callback_data="streamers")],
+        [InlineKeyboardButton("🔥 18+ Actors", callback_data="actors")],
+        [InlineKeyboardButton("💼 My Applications", callback_data="applications")],
     ])
 
 # =========================================
-# START
+# START COMMAND
 # =========================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     user = update.effective_user
 
-    username = (
-        user.username
-        if user.username
-        else "No Username"
-    )
-
-    cursor.execute(
-        "INSERT OR IGNORE INTO users VALUES (?, ?)",
-        (user.id, username)
-    )
-
+    cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?)",
+                   (user.id, user.username or "No Username"))
     conn.commit()
 
     await update.message.reply_text(
-        "👋 Welcome to Seasjoint Agency\n\n"
-        "Choose a category below:",
+        "👋 Welcome to Seasjoint Agency",
         reply_markup=home_keyboard()
     )
 
 # =========================================
-# BUTTONS
+# BUTTON HANDLER
 # =========================================
 
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     query = update.callback_query
     await query.answer()
 
-    data = query.data
     user_id = query.from_user.id
+    data = query.data
 
-    # =====================================
-    # HOME
-    # =====================================
-
-    if data == "home":
-
-        await query.edit_message_text(
-            "👋 Welcome back to Seasjoint Agency",
-            reply_markup=home_keyboard()
-        )
-
-    # =====================================
-    # CHAT
-    # =====================================
-
-    elif data == "chat":
-
-        user_data_store[user_id] = {
-            "role": "CHAT SUPPORT",
-            "step": "name"
-        }
-
-        await query.edit_message_text(
-            "📝 CHAT SUPPORT APPLICATION\n\n"
-            "Enter your full name:",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(
-                    "⬅️ Back",
-                    callback_data="home"
-                )]
-            ])
-        )
-
-    # =====================================
-    # STREAMER
-    # =====================================
+    if data == "chat":
+        user_data_store[user_id] = {"role": "CHAT SUPPORT", "step": "name"}
 
     elif data == "streamers":
-
-        user_data_store[user_id] = {
-            "role": "STREAMER",
-            "step": "name"
-        }
-
-        await query.edit_message_text(
-            "📝 STREAMER APPLICATION\n\n"
-            "Enter your full name:",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(
-                    "⬅️ Back",
-                    callback_data="home"
-                )]
-            ])
-        )
-
-    # =====================================
-    # ACTOR
-    # =====================================
+        user_data_store[user_id] = {"role": "STREAMER", "step": "name"}
 
     elif data == "actors":
+        user_data_store[user_id] = {"role": "18+ ACTOR", "step": "name"}
 
-        user_data_store[user_id] = {
-            "role": "18+ ACTOR",
-            "step": "name"
-        }
-
-        await query.edit_message_text(
-            "🔥 18+ ACTOR APPLICATION\n\n"
-            "Enter your full name:",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(
-                    "⬅️ Back",
-                    callback_data="home"
-                )]
-            ])
-        )
-
-    # =====================================
-    # APPLICATIONS
-    # =====================================
+    elif data == "home":
+        await query.edit_message_text("Menu:", reply_markup=home_keyboard())
+        return
 
     elif data == "applications":
-
-        cursor.execute("""
-        SELECT app_id, role, status
-        FROM applications
-        WHERE user_id=?
-        """, (user_id,))
-
+        cursor.execute("SELECT app_id, role, status FROM applications WHERE user_id=?",
+                       (user_id,))
         rows = cursor.fetchall()
 
         if not rows:
-
-            await query.edit_message_text(
-                "📂 No applications found.",
-                reply_markup=home_keyboard()
-            )
+            await query.edit_message_text("No applications found.", reply_markup=home_keyboard())
             return
 
-        text = "📂 YOUR APPLICATIONS\n\n"
+        text = "Your Applications:\n\n"
+        for r in rows:
+            text += f"{r[0]} | {r[1]} | {r[2]}\n"
 
-        for app_id, role, status in rows:
+        await query.edit_message_text(text, reply_markup=home_keyboard())
+        return
 
-            text += (
-                f"🆔 {app_id}\n"
-                f"💼 {role}\n"
-                f"📌 {status}\n\n"
-            )
-
-        await query.edit_message_text(
-            text,
-            reply_markup=home_keyboard()
-        )
-
-    # =====================================
-    # APPROVE
-    # =====================================
-
-    elif data.startswith("approve_"):
-
-        app_id = data.split("_")[1]
-
-        cursor.execute("""
-        UPDATE applications
-        SET status='APPROVED'
-        WHERE app_id=?
-        """, (app_id,))
-
-        conn.commit()
-
-        cursor.execute("""
-        SELECT user_id
-        FROM applications
-        WHERE app_id=?
-        """, (app_id,))
-
-        user = cursor.fetchone()
-
-        if user:
-
-            await context.bot.send_message(
-                chat_id=user[0],
-                text=(
-                    "🎉 Congratulations!\n\n"
-                    "Your application has been approved."
-                )
-            )
-
-        await query.edit_message_text(
-            f"✅ Application {app_id} approved."
-        )
-
-    # =====================================
-    # REJECT
-    # =====================================
-
-    elif data.startswith("reject_"):
-
-        app_id = data.split("_")[1]
-
-        cursor.execute("""
-        UPDATE applications
-        SET status='REJECTED'
-        WHERE app_id=?
-        """, (app_id,))
-
-        conn.commit()
-
-        cursor.execute("""
-        SELECT user_id
-        FROM applications
-        WHERE app_id=?
-        """, (app_id,))
-
-        user = cursor.fetchone()
-
-        if user:
-
-            await context.bot.send_message(
-                chat_id=user[0],
-                text=(
-                    "❌ Sorry.\n\n"
-                    "Your application was not approved."
-                )
-            )
-
-        await query.edit_message_text(
-            f"❌ Application {app_id} rejected."
-        )
+    await query.edit_message_text("Enter your full name:")
 
 # =========================================
-# HANDLE FORMS
+# MESSAGE FLOW
 # =========================================
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     user = update.effective_user
-    text = update.message.text or ""
-
-    # =====================================
-    # BROADCAST MODE
-    # =====================================
-
-    if (
-        user.id == ADMIN_ID
-        and user.id in broadcast_mode
-    ):
-
-        cursor.execute("SELECT user_id FROM users")
-        users = cursor.fetchall()
-
-        sent = 0
-
-        for u in users:
-
-            try:
-
-                await context.bot.send_message(
-                    chat_id=u[0],
-                    text=text
-                )
-
-                sent += 1
-
-            except:
-                pass
-
-        del broadcast_mode[user.id]
-
-        await update.message.reply_text(
-            f"✅ Broadcast sent to {sent} users."
-        )
-
-        return
-
-    # =====================================
-    # FORM FLOW
-    # =====================================
+    text = update.message.text
 
     if user.id not in user_data_store:
         return
 
     data = user_data_store[user.id]
 
-    # NAME
-
     if data["step"] == "name":
-
         data["name"] = text
         data["step"] = "age"
-
-        await update.message.reply_text(
-            "Enter your age:"
-        )
-
-    # AGE
+        await update.message.reply_text("Enter age:")
 
     elif data["step"] == "age":
-
         data["age"] = text
         data["step"] = "phone"
-
-        await update.message.reply_text(
-            "Enter your phone number:"
-        )
-
-    # PHONE
+        await update.message.reply_text("Enter phone:")
 
     elif data["step"] == "phone":
-
         data["phone"] = text
         data["step"] = "email"
-
-        await update.message.reply_text(
-            "Enter your email:"
-        )
-
-    # EMAIL
+        await update.message.reply_text("Enter email:")
 
     elif data["step"] == "email":
-
         data["email"] = text
-
-        role = data["role"]
-
-        if role == "18+ ACTOR":
-
-            data["step"] = "gender"
-
-            await update.message.reply_text(
-                "Enter your gender:"
-            )
-
-        elif role == "STREAMER":
-
-            data["step"] = "platform"
-
-            await update.message.reply_text(
-                "Enter your streaming platform:"
-            )
-
-        else:
-
-            data["step"] = "experience"
-
-            await update.message.reply_text(
-                "Enter your experience:"
-            )
-
-    # GENDER
-
-    elif data["step"] == "gender":
-
-        data["gender"] = text
         data["step"] = "experience"
-
-        await update.message.reply_text(
-            "Enter your experience:"
-        )
-
-    # PLATFORM
-
-    elif data["step"] == "platform":
-
-        data["platform"] = text
-        data["step"] = "experience"
-
-        await update.message.reply_text(
-            "Enter your experience:"
-        )
-
-    # EXPERIENCE
+        await update.message.reply_text("Enter experience:")
 
     elif data["step"] == "experience":
 
-        data["experience"] = text
-
-        app_id = (
-            "APP-" +
-            str(uuid.uuid4())[:8].upper()
-        )
-
-        timestamp = datetime.now().strftime(
-            "%Y-%m-%d %H:%M"
-        )
-
-        username = (
-            user.username
-            if user.username
-            else "No Username"
-        )
+        app_id = "APP-" + str(uuid.uuid4())[:8].upper()
+        time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
         cursor.execute("""
         INSERT INTO applications (
-            app_id,
-            user_id,
-            username,
-            role,
-            name,
-            age,
-            phone,
-            email,
-            gender,
-            platform,
-            experience,
-            status,
-            timestamp
+            app_id, user_id, username, role, name, age,
+            phone, email, gender, platform, experience,
+            status, timestamp
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-
             app_id,
             user.id,
-            username,
+            user.username or "No Username",
             data["role"],
             data.get("name"),
             data.get("age"),
             data.get("phone"),
             data.get("email"),
-            data.get("gender"),
-            data.get("platform"),
-            data.get("experience"),
+            "",
+            "",
+            text,
             "PENDING",
-            timestamp
+            time
         ))
 
         conn.commit()
-
-        send_email(
-            data["email"],
-            data["role"]
-        )
-
-        waiting_payment[user.id] = app_id
-
-        # PAYMENT LINK
-
-        if data["role"] == "18+ ACTOR":
-            form_link = ACTOR_FORM
-        else:
-            form_link = CHAT_STREAMER_FORM
-
-
-
-
-        keyboard = InlineKeyboardMarkup([
-
-            [InlineKeyboardButton(
-                "💳 Complete Registration",
-                url=form_link
-            )],
-
-            [InlineKeyboardButton(
-                "⬅️ Back",
-                callback_data="home"
-            )]
-        ])
+        send_email(data["email"], data["role"])
 
         await update.message.reply_text(
-            f"✅ Application Submitted\n\n"
-            f"🆔 {app_id}\n\n"
-            "Complete the registration form below.\n"
-            "After payment, send a screenshot here.",
-            reply_markup=keyboard
-        )
-
-        # ADMIN MESSAGE
-
-        admin_keyboard = InlineKeyboardMarkup([
-
-            [
-                InlineKeyboardButton(
-                    "✅ Approve",
-                    callback_data=f"approve_{app_id}"
-                ),
-
-                InlineKeyboardButton(
-                    "❌ Reject",
-                    callback_data=f"reject_{app_id}"
-                )
-            ]
-        ])
-
-        await context.bot.send_message(
-            chat_id=ADMIN_ID,
-            text=(
-                f"📥 NEW APPLICATION\n\n"
-                f"🆔 {app_id}\n"
-                f"👤 @{username}\n"
-                f"💼 {data['role']}\n"
-                f"📧 {data['email']}"
-            ),
-            reply_markup=admin_keyboard
+            f"Application submitted ✅\nID: {app_id}"
         )
 
         del user_data_store[user.id]
 
 # =========================================
-# PAYMENT SCREENSHOT
+# MAIN RUNNER (IMPORTANT FIX)
 # =========================================
 
-async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def main():
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-    user = update.effective_user
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button_click))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    if user.id not in waiting_payment:
-        return
+    print("Bot running...")
 
-    app_id = waiting_payment[user.id]
-
-    photo = update.message.photo[-1].file_id
-
-    await context.bot.send_photo(
-        chat_id=ADMIN_ID,
-        photo=photo,
-        caption=(
-            f"💳 PAYMENT PROOF\n\n"
-            f"🆔 {app_id}\n"
-            f"👤 {user.username}"
-        )
-    )
-
-    await update.message.reply_text(
-        "✅ Payment proof received.\n\n"
-        "Your application is under review."
-    )
-
-    del waiting_payment[user.id]
+    app.run_polling()
 
 # =========================================
-# BROADCAST COMMAND
+# START
 # =========================================
-
-async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if update.effective_user.id != ADMIN_ID:
-        return
-
-    broadcast_mode[update.effective_user.id] = True
-
-    await update.message.reply_text(
-        "📢 Send the message you want to broadcast."
-    )
-
-# =========================================
-# ADMIN PANEL
-# =========================================
-
-async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if update.effective_user.id != ADMIN_ID:
-        return
-
-    cursor.execute("SELECT COUNT(*) FROM users")
-    total_users = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM applications")
-    total_apps = cursor.fetchone()[0]
-
-    await update.message.reply_text(
-        f"👑 ADMIN PANEL\n\n"
-        f"👥 Users: {total_users}\n"
-        f"📂 Applications: {total_apps}"
-    )
-
-# =========================================
-# MAIN
-# =========================================
-
-app = (
-    ApplicationBuilder()
-    .token(TELEGRAM_TOKEN)
-    .connect_timeout(30)
-    .read_timeout(30)
-    .write_timeout(30)
-    .pool_timeout(30)
-    .build()
-    )
-
-app.add_handler(CommandHandler(
-    "start",
-    start
-))
-
-app.add_handler(CommandHandler(
-    "admin",
-    admin
-))
-
-app.add_handler(CommandHandler(
-    "broadcast",
-    broadcast
-))
-
-app.add_handler(CallbackQueryHandler(
-    button_click
-))
-
-app.add_handler(MessageHandler(
-    filters.TEXT & ~filters.COMMAND,
-    handle_message
-))
-
-app.add_handler(MessageHandler(
-    filters.PHOTO,
-    handle_photo
-))
 
 if __name__ == "__main__":
-
-  import asyncio
-
-async def main():
-    print("✅ Seasjoint Agency Bot Running...") 
-
-    await app.initialize()
-    await app.start()
-
-    await app.run_polling(drop_pending_updates=True)
-
-    # keep bot alive properly
-   
-    asyncio.run(main())   
-    
-    
+    main()
