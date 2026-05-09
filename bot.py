@@ -20,11 +20,14 @@ from email.mime.multipart import MIMEMultipart
 # =========================
 # CONFIG
 # =========================
-TELEGRAM_TOKEN = "YOUR_TOKEN_HERE"
+TELEGRAM_TOKEN ="8736118266:AAFDKiyE7sEVmYX4GgCr5bU8gc-ijcS7GvI"
 ADMIN_ID = 5922263974
 
+
+
 EMAIL_ADDRESS = "seasjoint@gmail.com"
-EMAIL_PASSWORD = "YOUR_APP_PASSWORD"
+EMAIL_PASSWORD = "zmtw rnke cymb ljov"
+
 
 CHAT_STREAMER_FORM = "https://forms.gle/dP6DZwjMGLfP5sSV7"
 ACTOR_FORM = "https://forms.gle/tvVRfT4JczP6mHqG7"
