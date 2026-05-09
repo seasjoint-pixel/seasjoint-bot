@@ -23,8 +23,9 @@ from email.mime.multipart import MIMEMultipart
 # CONFIG
 # =========================================
 
-TELEGRAM_TOKEN = os.environ.get("8736118266:AAFDKiyE7sEVmYX4GgCr5bU8gc-ijcS7GvI")
-WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
+TELEGRAM_TOKEN ="8736118266:AAFDKiyE7sEVmYX4GgCr5bU8gc-ijcS7GvI"
+WEBHOOK_URL = https://your-app.up.railway.app/webhook
+
 
 
 ADMIN_ID = 5922263974
