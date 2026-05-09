@@ -774,7 +774,19 @@ app.add_handler(MessageHandler(
     filters.PHOTO,
     handle_photo
 ))
+import asyncio
 
-print("✅ Seasjoint Agency Bot Running...")
+async def main():
+    print("✅ Seasjoint Agency Bot Running...") 
 
-app.run_polling(drop_pending_updates=True)
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling(drop_pending_updates=True)
+
+    # keep bot alive properly
+    await asyncio.wait(asyncio.Event().wait())
+
+if __name__ == "__main__":
+    asyncio.run(main()) 
+    
+
