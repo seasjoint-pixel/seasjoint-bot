@@ -4,14 +4,12 @@ from telegram import (
     Update
 )
 
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    CallbackQueryHandler,
-    MessageHandler,
-    ContextTypes,
-    filters,
-)
+from telegram.ext import Application, ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler
+from telegram.ext import filters
+  
+    
+   
+
 
 from datetime import datetime
 import sqlite3
@@ -777,8 +775,20 @@ app.add_handler(MessageHandler(
     handle_photo
 ))
 
-print("✅ Seasjoint Agency Bot Running...")
+if __name__ == "__main__":
 
-app.run_polling(drop_pending_updates=True)
+  import asyncio
+
+async def main():
+    print("✅ Seasjoint Agency Bot Running...") 
+
+    await app.initialize()
+    await app.start()
+
+    await app.run_polling(drop_pending_updates=True)
+
+    # keep bot alive properly
+   
+    asyncio.run(main())   
     
     
